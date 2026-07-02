@@ -1,0 +1,27 @@
+# Secrets / credentials
+serviceAccountKey.json
+**/serviceAccountKey.json
+firebase-adminsdk-*.json
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+*.key
+*.crt
+*.p12
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+.next/
+**/.next/
+dist/
+build/
+
+# OS / logs / misc
+.DS_Store
+*.log
+release_*.tar.gz

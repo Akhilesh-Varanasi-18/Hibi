@@ -1,0 +1,73 @@
+BACKEND REMOTES:
+origin	https://github.com/ABHISHEK-J7/HRMS_Dummy.git (fetch)
+origin	https://github.com/ABHISHEK-J7/HRMS_Dummy.git (push)
+upstream	https://github.com/neelambabji/hrms.git (fetch)
+upstream	https://github.com/neelambabji/hrms.git (push)
+
+FRONTEND REMOTES:
+origin	https://github.com/ABHISHEK-J7/HRMS_Dummy.git (fetch)
+origin	https://github.com/ABHISHEK-J7/HRMS_Dummy.git (push)
+upstream	https://github.com/neelambabji/hrms.git (fetch)
+upstream	https://github.com/neelambabji/hrms.git (push)
+
+BACKEND STATUS:
+On branch official-2fa-setup
+Your branch is behind 'upstream/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   package.json
+	modified:   src/controllers/EmployeeControllerManagement/employeesController.js
+	modified:   src/utils/encryption.js
+	modified:   src/utils/mailSender.js
+	modified:   ../HRMS_Frontend/package-lock.json
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	../HRMS_Frontend/.env
+	../HRMS_Frontend/DOCUMENTATION.md
+	../HRMS_Frontend/backend_diff.txt
+	../HRMS_Frontend/docs/
+	../HRMS_Frontend/frontend_diff.txt
+	../HRMS_Frontend/test_mongo.js
+	../backend_remotes.txt
+	../backend_status.txt
+	../frontend_remotes.txt
+	../frontend_status.txt
+	../release_backend.tar.gz
+	../release_frontend.tar.gz
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+FRONTEND STATUS:
+On branch official-2fa-setup
+Your branch is behind 'upstream/main' by 1 commit, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   ../HRMS_Backend/package.json
+	modified:   ../HRMS_Backend/src/controllers/EmployeeControllerManagement/employeesController.js
+	modified:   ../HRMS_Backend/src/utils/encryption.js
+	modified:   ../HRMS_Backend/src/utils/mailSender.js
+	modified:   package-lock.json
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	.env
+	DOCUMENTATION.md
+	backend_diff.txt
+	docs/
+	frontend_diff.txt
+	test_mongo.js
+	../backend_remotes.txt
+	../backend_status.txt
+	../frontend_remotes.txt
+	../frontend_status.txt
+	../release_backend.tar.gz
+	../release_frontend.tar.gz
+
+no changes added to commit (use "git add" and/or "git commit -a")

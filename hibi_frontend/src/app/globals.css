@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* hides all the scrollbars */
+/* *::-webkit-scrollbar {
+  display: none;
+} */
+
+/* Target scrollbar */
+*::-webkit-scrollbar {
+  width: 3px;
+  /* vertical scrollbar width */
+  height: 6px;
+  /* horizontal scrollbar height */
+}
+
+/* Track */
+*::-webkit-scrollbar-track {
+  background: transparent;
+  /* or any color */
+}
+
+/* Handle */
+*::-webkit-scrollbar-thumb {
+  background: #888;
+  /* scrollbar color */
+  border-radius: 4px;
+  /* rounded corners */
+}
+
+/* Handle on hover */
+*::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+
+/* Hide the eye / reveal button in Chrome, Edge, Opera */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-clear-button {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+/* Hide password reveal in Safari */
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none !important;
+}
+
+
+@font-face {
+  font-family: "aspekta";
+  src: url("/src/app/fonts/Aspekta-500.ttf");
+}
+
+@font-face {
+  font-family: "DMSans";
+  src: url("/src/app/fonts/DMSan.ttf");
+}
+
+* {
+  transition: color ease 0.1s !important;
+  font-family: "DMSans", Arial, Helvetica, sans-serif !important;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 96%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 97.6%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 0%;
+    /* black */
+    --sidebar-primary: 0 0% 0%;
+    /* black */
+    --sidebar-primary-foreground: 0 0% 100%;
+    /* white */
+    --sidebar-accent: 0 0% 0%;
+    /* black */
+    --sidebar-accent-foreground: 0 0% 100%;
+    /* black */
+    --sidebar-border: 0 0% 80%;
+    /* light gray */
+    --sidebar-ring: 0 0% 0%;
+    /* black */
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 0% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 0% 10%;
+    /* This is your #303030 */
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 0% 10%;
+    ;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 0% 10%;
+    --sidebar-foreground: 0 0% 100%;
+    /* black */
+    --sidebar-primary: 0 0% 100%;
+    /* black */
+    --sidebar-primary-foreground: 0 0% 100%;
+    /* white */
+    --sidebar-accent: 0 0% 100%;
+    /* black */
+    --sidebar-accent-foreground: 0 0% 0%;
+    /* black */
+    --sidebar-border: 0 0% 80%;
+    /* light gray */
+    --sidebar-ring: 0 0% 100%;
+    /* black */
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+
+
+/* Overriding shadCN color classes */
+.muted {
+  background-color: #555;
+}
+
+/* Make time picker indicator black in light theme, white in dark theme (using .dark class) */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  color: black;
+}
+
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  color: white;
+}
+
+
+/* Tried this but not working */
+/* input[type="password"]{
+  -webkit-text-security: disc;
+  -moz-webkit-text-security: disc;
+  -moz-text-security: disc;
+} */
+
+.sticky {
+  position: sticky !important;
+}

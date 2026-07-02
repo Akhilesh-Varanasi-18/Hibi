@@ -1,0 +1,31 @@
+const groupDefinitions = [
+    { name: 'Attendance Management', description: 'Manage employee attendance records and status types.' },
+    { name: 'Authentication', description: 'Handle user login, logout, and session management.' },
+    { name: 'Department Management', description: 'Manage organizational departments.' },
+    { name: 'Designation Management', description: 'Manage employee designations within the organization.' },
+    { name: 'Employee Data', description: 'Manage personal, contact, bank, and government ID details of employees.' },
+    { name: 'Employee History', description: 'View and manage historical records of employees.' },
+    { name: 'Employee Management', description: 'Core operations for creating, updating, and managing employee profiles.' },
+    { name: 'Employee Retrieval', description: 'Retrieve various lists and specific data about employees.' },
+    { name: 'Employee Hierarchy', description: 'Manage and view the reporting structure and notification chains.' },
+    { name: 'Temporary Privileges', description: 'Manage temporary access rights for employees.' },
+    { name: 'Employee Bulk Operations', description: 'Handle bulk data operations for employees, including uploads and template downloads.' },
+    { name: 'Employee Information', description: 'Access general information related to employees.' },
+    { name: 'Leave Management', description: 'Manage employee leave requests and their processing.' },
+    { name: 'Leave Types', description: 'Define and manage different types of leaves.' },
+    { name: 'Notifications', description: 'Manage system notifications, including Firebase Cloud Messaging tokens.' },
+    { name: 'Organization', description: 'Manage organizational details, including heads and change requests.' },
+    { name: 'Password Management', description: 'Handle user password changes.' },
+    { name: 'Permission Requests', description: 'Manage requests for specific permissions.' },
+    { name: 'Permission Types', description: 'Define and manage different types of permissions.' },
+    { name: 'Privileges & Roles', description: 'Manage user privileges and roles within the system.' },
+    { name: 'Product Manager', description: 'System-level management for product managers, including organization and head data.' },
+    { name: 'Shift Management', description: 'Manage employee work shifts.' },
+    { name: 'Status Types', description: 'Define and manage various status types used across the system.' },
+    { name: 'Team Management', description: 'Manage teams, including creation, updates, and employee assignments.' },
+    { name: 'Trip Management', description: 'Manage employee trip requests and active trips.' },
+    { name: 'Trip Types', description: 'Define and manage different types of trips.' },
+    { name: 'Work Reports', description: 'Manage daily work reports submitted by employees.' }
+];
+
+module.exports = groupDefinitions;
