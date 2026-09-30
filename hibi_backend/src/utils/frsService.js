@@ -5,7 +5,11 @@
  *
  * API Response format (array of objects):
  *   punch.after.EmployeeCode  — e.g. "0004"
- *   punch.after.timestamp     — ISO timestamp string (UTC)
+ *   punch.after.LogDateTime   — epoch ms of the actual scan on the device, already
+ *                               IST wall time in its UTC slot. THIS is the punch time.
+ *   punch.after.timestamp     — ISO timestamp (UTC) of when the device UPLOADED the
+ *                               record. Lags the scan by days after an outage, so it
+ *                               must not be used as the punch time.
  *   punch.after.Serialnumber  — device serial, e.g. "NCD8244900467"
  *
  * LEGACY (SOAP): The old eTimeTrackLite SOAP functions are kept below
@@ -17,6 +21,14 @@ const https = require('https');
 
 // ─── REST API Config (PRIMARY) ─────────────────────────────────────────────
 const REST_API_URL = process.env.FRS_REST_URL || 'https://toriiminds.com/backend/api/get-attendancelogs';
+
+// App-wide convention: Date fields hold IST wall time in their UTC slots
+// (see getISTDateAndTime and shift windows built as `${date}T${shiftStart}Z`).
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+// How many days back the routine sync looks, so punches a device buffered while
+// it was offline are still picked up when it finally uploads them.
+const FRS_LOOKBACK_DAYS = Number(process.env.FRS_LOOKBACK_DAYS) || 7;
 
 // ─── SOAP Config (LEGACY – kept for reference) ─────────────────────────────
 const FRS_URL = process.env.FRS_SOAP_URL || 'http://frs.toriiminds.com/WebAPIService.asmx';
@@ -64,14 +76,31 @@ async function getPunchesFromRestAPI(fromDate, toDate) {
                 const raw = punch.after || punch; // support both { after: {...} } and flat objects
 
                 const employeeCode = raw.EmployeeCode || raw.employeeCode;
+                const logDateTimeRaw = raw.LogDateTime;
                 const timestampRaw = raw.timestamp || raw.punchTime;
                 const deviceSerial = raw.Serialnumber || raw.serialNumber || 'REST_DEVICE';
 
-                if (!employeeCode || !timestampRaw) continue;
+                if (!employeeCode || (logDateTimeRaw == null && !timestampRaw)) continue;
 
-                const punchTime = new Date(timestampRaw);
+                // LogDateTime is when the scan actually happened on the device, and it
+                // already carries IST wall time in its UTC slot (the app-wide
+                // convention), so it is used as-is. `timestamp` is only when the device
+                // uploaded the record — after an outage that can be hours or days
+                // later, which would file the punch under the upload date instead of
+                // the day it was worked. Fall back to it only if LogDateTime is absent.
+                let punchTime;
+                if (logDateTimeRaw != null && !isNaN(Number(logDateTimeRaw))) {
+                    punchTime = new Date(Number(logDateTimeRaw));
+                } else {
+                    const uploadedAtUTC = new Date(timestampRaw);
+                    if (isNaN(uploadedAtUTC.getTime())) {
+                        console.warn('[frsService] Invalid timestamp for employee:', employeeCode, timestampRaw);
+                        continue;
+                    }
+                    punchTime = new Date(uploadedAtUTC.getTime() + IST_OFFSET_MS);
+                }
                 if (isNaN(punchTime.getTime())) {
-                    console.warn('[frsService] Invalid timestamp for employee:', employeeCode, timestampRaw);
+                    console.warn('[frsService] Invalid punch time for employee:', employeeCode, logDateTimeRaw, timestampRaw);
                     continue;
                 }
 
@@ -98,11 +127,26 @@ async function getPunchesFromRestAPI(fromDate, toDate) {
 }
 
 async function getTodaysPunchesFromRestAPI() {
-    const today = new Date();
-    const startOfDay = new Date(today);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const fromDate = new Date(startOfDay.getTime() - 5.5 * 60 * 60 * 1000);
-    return getPunchesFromRestAPI(fromDate, today);
+    // Punch times are IST-shifted, so "today" is the IST calendar day and the
+    // window bounds live on the same shifted axis.
+    const nowIST = new Date(Date.now() + IST_OFFSET_MS);
+    const fromDate = new Date(`${nowIST.toISOString().split('T')[0]}T00:00:00.000Z`);
+    return getPunchesFromRestAPI(fromDate, nowIST);
+}
+
+/**
+ * Fetch punches from the last `lookbackDays` days (inclusive of today).
+ *
+ * A device that loses connectivity buffers its punches and uploads them once it
+ * reconnects, so a punch worked several days ago can appear in the feed for the
+ * first time today. Today-only window would miss those entirely now that punch
+ * times come from LogDateTime rather than the upload time.
+ */
+async function getRecentPunchesFromRestAPI(lookbackDays = FRS_LOOKBACK_DAYS) {
+    const nowIST = new Date(Date.now() + IST_OFFSET_MS);
+    const todayStartIST = new Date(`${nowIST.toISOString().split('T')[0]}T00:00:00.000Z`);
+    const fromDate = new Date(todayStartIST.getTime() - lookbackDays * 24 * 60 * 60 * 1000);
+    return getPunchesFromRestAPI(fromDate, nowIST);
 }
 
 /**
@@ -262,7 +306,9 @@ async function getPunchesFromFRS(fromDate, toDate) {
 module.exports = {
     // PRIMARY — REST API (active)
     getTodaysPunchesFromRestAPI,
+    getRecentPunchesFromRestAPI,
     getPunchesFromRestAPI,
+    FRS_LOOKBACK_DAYS,
     // LEGACY — SOAP API (kept for reference)
     getPunchesFromFRS,
     getTodaysPunchesFromFRS,

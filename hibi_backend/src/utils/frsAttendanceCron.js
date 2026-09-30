@@ -11,7 +11,7 @@
 
 const cron = require('node-cron');
 const mongoose = require('mongoose');
-const { getTodaysPunchesFromRestAPI, getPunchesFromRestAPI } = require('./frsService');
+const { getRecentPunchesFromRestAPI, getPunchesFromRestAPI } = require('./frsService');
 const AttendancePunches = require('../models/AttendenceSchemaManagement/attendencePunchesSchema');
 const DailyAttendance = require('../models/AttendenceSchemaManagement/dailyAttendenceSchema');
 const AttendenceStatusTypes = require('../models/AttendenceSchemaManagement/attendenceStatusTypesSchema');
@@ -302,7 +302,7 @@ async function syncFRSAttendance() {
 
     try {
         console.log('[frsCron] Starting FRS attendance sync...');
-        const punches = await getTodaysPunchesFromRestAPI();
+        const punches = await getRecentPunchesFromRestAPI();
 
         if (!punches || punches.length === 0) {
             console.log('[frsCron] No punches fetched from FRS');
@@ -312,6 +312,9 @@ async function syncFRSAttendance() {
 
         let newCount = 0;
         let skipCount = 0;
+        // Days that actually received new punches this run. A device that was
+        // offline uploads its backlog late, so this is not necessarily today.
+        const affectedDates = new Set();
 
         for (const punch of punches) {
             try {
@@ -345,6 +348,7 @@ async function syncFRSAttendance() {
                 });
 
                 newCount++;
+                affectedDates.add(punch.punchTime.toISOString().split('T')[0]);
             } catch (err) {
                 console.error(`[frsCron] Error saving punch for ${punch.employeeCode}:`, err.message);
             }
@@ -352,64 +356,40 @@ async function syncFRSAttendance() {
 
         console.log(`[frsCron] Sync done — New: ${newCount}, Skipped (duplicate): ${skipCount}, Total fetched: ${punches.length}`);
 
-        // If punches exist, ensure daily attendance is built and finalized.
-        if (newCount > 0 || skipCount > 0) {
+        // If new punches arrived, ensure daily attendance is built and finalized
+        // for every day they belong to — which after an outage includes past days.
+        if (affectedDates.size > 0) {
             console.log('[frsCron] FRS punches available — building daily attendance...');
             const processor = getPunchProcessor();
             if (processor) {
                 try {
-                    // Collect unique orgIds from today's FRS punches via their employees
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const startOfToday = new Date(todayStr + 'T00:00:00.000Z');
-                    const endOfToday = new Date(todayStr + 'T23:59:59.999Z');
+                    const dateStrs = [...affectedDates].sort();
+                    console.log(`[frsCron] Processing attendance for ${dateStrs.length} date(s):`, dateStrs);
 
-                    const todayPunches = await AttendancePunches.find({
-                        punchTime: { $gte: startOfToday, $lte: endOfToday },
-                        source: 'FRS_DEVICE',
-                    }).select('employeeId').lean();
+                    for (const dateStr of dateStrs) {
+                        // Collect unique orgIds from that day's FRS punches via their employees
+                        const orgIds = await getOrgIdsFromFRSPunches(dateStr);
 
-                    const employeeIds = [
-                        ...new Set(todayPunches.map((p) => p.employeeId?.toString()).filter(Boolean)),
-                    ];
-                    const punchEmployees = await Employee.find({ _id: { $in: employeeIds } })
-                        .select('orgId')
-                        .lean();
-
-                    const orgIdSet = new Set();
-                    for (const employee of punchEmployees) {
-                        if (employee.orgId) {
-                            orgIdSet.add(employee.orgId.toString());
+                        if (orgIds.length === 0) {
+                            console.error(`[frsCron] Cannot process ${dateStr}: No orgIds found from that day's punches`);
+                            continue;
                         }
-                    }
 
-                    if (orgIdSet.size === 0) {
-                        console.error('[frsCron] Cannot process: No orgIds found from today\'s punches');
-                        return;
-                    }
+                        console.log(`[frsCron] ${dateStr}: ${orgIds.length} org(s):`, orgIds);
 
-                    console.log(`[frsCron] Processing attendance for ${orgIdSet.size} org(s):`, [...orgIdSet]);
+                        // Run the processor once per org so each org's shifts/statuses are used correctly
+                        for (const orgId of orgIds) {
+                            try {
+                                const dailyResult = await upsertDailyAttendanceFromFRSPunches(orgId, dateStr);
+                                console.log(
+                                    `[frsCron] Daily attendance upsert for org ${orgId} on ${dateStr} — Created: ${dailyResult.created}, Updated: ${dailyResult.updated}, Skipped: ${dailyResult.skipped}`
+                                );
 
-                    // Run the processor once per org so each org's shifts/statuses are used correctly
-                    for (const orgId of orgIdSet) {
-                        try {
-                            const dailyResult = await upsertDailyAttendanceFromFRSPunches(orgId, todayStr);
-                            console.log(
-                                `[frsCron] Daily attendance upsert for org ${orgId} — Created: ${dailyResult.created}, Updated: ${dailyResult.updated}, Skipped: ${dailyResult.skipped}`
-                            );
-
-                            const mockReq = {
-                                body: { fromDate: todayStr, toDate: todayStr },
-                                user: { orgId }
-                            };
-                            const mockRes = {
-                                status: (code) => ({
-                                    json: (data) => console.log(`[frsCron] Org ${orgId} status ${code}:`, data.message || data.error || '')
-                                })
-                            };
-                            await processor(mockReq, mockRes);
-                            console.log(`[frsCron] Processing done for org ${orgId}`);
-                        } catch (procErr) {
-                            console.error(`[frsCron] Processing error for org ${orgId}:`, procErr.message);
+                                await runAttendanceFinalizer(orgId, dateStr);
+                                console.log(`[frsCron] Processing done for org ${orgId} on ${dateStr}`);
+                            } catch (procErr) {
+                                console.error(`[frsCron] Processing error for org ${orgId} on ${dateStr}:`, procErr.message);
+                            }
                         }
                     }
                 } catch (procErr) {
