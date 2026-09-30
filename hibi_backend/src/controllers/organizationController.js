@@ -21,6 +21,7 @@ const leaveRequestSchema = require('../models/LeaveSchemaManagement/leaveRequest
 const permissionRequestSchema = require('../models/PermissionSchemaManagement/permissionRequestSchema');
 
 const { encryptThis, decryptThis } = require("../utils/encryption");
+const { getSmtpConfig } = require("../utils/mailSender");
 const nodemailer = require('nodemailer');
 
 const { getISTDateAndTime } = require("../utils/timeFunction");
@@ -136,9 +137,7 @@ const addOrganization = async (req, res) => {
 
         // verify email by transporter.verify()
         const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
+            ...getSmtpConfig(organizationEmail),
             auth: {
                 user: organizationEmail,
                 pass: decryptThis(JSON.parse(organizationData.organizationAppPassword).encryptedData, JSON.parse(organizationData.organizationAppPassword).iv),
@@ -214,9 +213,7 @@ const updateOrganization = async (req, res) => {
 
             // verify email by transporter.verify()
             const transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 587,
-                secure: false,
+                ...getSmtpConfig(organizationEmail),
                 auth: {
                     user: organizationEmail,
                     pass: decryptThis(JSON.parse(organization.organizationAppPassword).encryptedData, JSON.parse(organization.organizationAppPassword).iv),

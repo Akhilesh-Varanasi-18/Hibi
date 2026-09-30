@@ -161,6 +161,25 @@ const replaceTemplateVariables = (template, variables) => {
   return result;
 };
 
+// Pick the SMTP server from the sender's email domain.
+// Gmail addresses use Gmail SMTP; Outlook/Hotmail personal addresses use
+// Outlook SMTP; any other domain (e.g. Microsoft 365 custom domains like
+// support@toriiminds.com) goes through Office 365 SMTP.
+// Override per-deployment with SMTP_HOST/SMTP_PORT env vars if needed.
+const getSmtpConfig = (senderEmail) => {
+  if (process.env.SMTP_HOST) {
+    return { host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT) || 587, secure: false };
+  }
+  const domain = (senderEmail || "").split("@")[1]?.toLowerCase() || "";
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    return { host: "smtp.gmail.com", port: 587, secure: false };
+  }
+  if (["outlook.com", "hotmail.com", "live.com", "msn.com"].includes(domain)) {
+    return { host: "smtp-mail.outlook.com", port: 587, secure: false };
+  }
+  return { host: "smtp.office365.com", port: 587, secure: false };
+};
+
 const sendmail = async (subject, type, username, email, password, organizationEmail, organizationAppPassword, employeeCode = "") => {
   if (organizationEmail === "toriiminds@gmail.com") {
     console.log({ email, password });
@@ -174,9 +193,7 @@ const sendmail = async (subject, type, username, email, password, organizationEm
   }
 
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    ...getSmtpConfig(organizationEmail),
     auth: {
       user: organizationEmail,
       pass: decryptThis(JSON.parse(organizationAppPassword).encryptedData, JSON.parse(organizationAppPassword).iv)
@@ -233,5 +250,6 @@ const generatePassword = () => {
 
 module.exports = {
   sendmail,
-  generatePassword
+  generatePassword,
+  getSmtpConfig
 };

@@ -4671,7 +4671,7 @@ const getAllEmployeeAttendence = async (req, res) => {
 };
 
 //Function to process attendance punches
-const processAttendencePunches = async (orgId, dateStr) => {
+const processAttendencePunches = async (orgId, dateStr, sendReminders = false) => {
   try {
     if (!orgId) {
       console.error("Organization ID is required for processing attendance.");
@@ -4735,18 +4735,17 @@ const processAttendencePunches = async (orgId, dateStr) => {
     // console.log(body)
     for (const record of records) {
       if (!record.logOutTime) {
-        // console.log("Missing logOutTime for record, need to send Notification");
-        const token = await getNotificationToken(record.employeeId);
-        if (token && token.length > 0) {
-          // console.log(
-          //   "Sending notification to employeeId:",
-          //   record.employeeId,
-          //   " is ",
-          //   token
-          // );
-          await sendNotificationtoTokens(token, title, body);
-        } else {
-          console.log("No token found for employeeId:", record.employeeId);
+        // Only send the "missing punch" nudge when explicitly asked to
+        // (end-of-day reminder cron). The every-minute FRS sync also calls
+        // this function; without this gate it would re-notify every checked-in
+        // employee once per minute all day long.
+        if (sendReminders) {
+          const token = await getNotificationToken(record.employeeId);
+          if (token && token.length > 0) {
+            await sendNotificationtoTokens(token, title, body);
+          } else {
+            console.log("No token found for employeeId:", record.employeeId);
+          }
         }
         continue;
       }
@@ -5905,7 +5904,7 @@ cron.schedule("0 19,21 * * 1-5", async () => {
   // await getAttendancePunchesFromMainDevice();
   const dateStr = getISTDateAndTime().toISOString().split("T")[0];
   for (const org of organizations) {
-    await processAttendencePunches(org._id, dateStr);
+    await processAttendencePunches(org._id, dateStr, true);
   }
   console.log("Process Completed at ", getISTDateAndTime());
 });

@@ -33,6 +33,7 @@ const allowedOrigins = [
   "https://hibi.technicalhub.io",
   "https://hibiplatform.com",
   "http://18.60.11.55:3000",
+  "http://localhost:3000"
 ];
 
 app.use(
